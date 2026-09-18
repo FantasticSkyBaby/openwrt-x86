@@ -12,3 +12,7 @@
 
 # Modify default IP
 sed -i 's/192.168.1.1/192.168.199.1/g' package/base-files/files/bin/config_generate
+
+# 找到并删除 luci-app-tailscale 目录下的冲突文件
+find package/ -type f -path "*/luci-app-tailscale/root/etc/config/tailscale" -delete
+find package/ -type f -path "*/luci-app-tailscale/root/etc/init.d/tailscale" -delete
