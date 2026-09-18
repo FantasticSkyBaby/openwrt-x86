@@ -13,6 +13,23 @@
 # Modify default IP
 sed -i 's/192.168.1.1/192.168.199.1/g' package/base-files/files/bin/config_generate
 
-# 找到并删除 luci-app-tailscale 目录下的冲突文件
-find package/ -type f -path "*/luci-app-tailscale/root/etc/config/tailscale" -delete
-find package/ -type f -path "*/luci-app-tailscale/root/etc/init.d/tailscale" -delete
+# Tailscale LuCI support
+echo "===== Configuring luci-app-tailscale ====="
+
+# Remove files from the official tailscale package
+# because luci-app-tailscale provides them.
+if [ -f feeds/packages/net/tailscale/Makefile ]; then
+    sed -i '/\/etc\/init\.d\/tailscale/d;/\/etc\/config\/tailscale/d;' \
+        feeds/packages/net/tailscale/Makefile
+fi
+
+# Verify
+echo "===== tailscale Makefile ====="
+grep -n -A30 -B5 "define Package/tailscale/install" \
+    feeds/packages/net/tailscale/Makefile || true
+
+echo "===== luci-app-tailscale files ====="
+find feeds package -type f \( \
+    -path "*/luci-app-tailscale/root/etc/config/tailscale" -o \
+    -path "*/luci-app-tailscale/root/etc/init.d/tailscale" \
+\) -print 2>/dev/null || true
