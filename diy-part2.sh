@@ -13,6 +13,9 @@
 # Modify default IP
 sed -i 's/192.168.1.1/192.168.199.1/g' package/base-files/files/bin/config_generate
 
+# 新增 IPv4 网关 (注意转义 \$1)
+sed -i "/set network.\$1.netmask/a\\t\\t\\t\\tset network.\$1.gateway='192.168.199.3'" package/base-files/files/bin/config_generate
+
 # Tailscale LuCI support
 echo "===== Configuring luci-app-tailscale ====="
 
