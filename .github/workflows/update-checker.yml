@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 P3TERX <https://p3terx.com>
+# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
@@ -23,6 +23,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # 【已添加】授权删除旧工作流运行历史的权限，避免 403
+    permissions:
+      actions: write
 
     steps:
 
@@ -30,14 +33,17 @@ jobs:
       id: getHash
       run: |
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH .
-        echo "::set-output name=commitHash::$(git rev-parse HEAD)"
+        # 【已修改】使用官方最新的 GITHUB_OUTPUT 语法传递 Hash
+        echo "commitHash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Compare Commit Hash
       id: cacheHash
-      uses: actions/cache@v3
+      # 【已升级】升级为 actions/cache@v4
+      uses: actions/cache@v4
       with:
         path: .commitHash
-        key: HEAD-${{ steps.getHash.outputs.commitHash }}
+        # 【已修改】更换前缀避免沿用之前的旧脏缓存
+        key: commitHash_${{ steps.getHash.outputs.commitHash }}
 
     - name: Save New Commit Hash
       if: steps.cacheHash.outputs.cache-hit != 'true'
@@ -46,7 +52,8 @@ jobs:
 
     - name: Trigger build
       if: steps.cacheHash.outputs.cache-hit != 'true'
-      uses: peter-evans/repository-dispatch@v1
+      # 【已升级】升级为 Node 20 驱动的 peter-evans/repository-dispatch@v3
+      uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
         event-type: Source Code Update
@@ -55,6 +62,6 @@ jobs:
       uses: Mattraks/delete-workflow-runs@v2
       with:
         retain_days: 0
-        keep_minimum_runs: 1
-        delete_workflow_pattern: update-checker.yml
+        keep_minimum_runs: 1 # 只保留最新 1 个检查器运行历史
+        delete_workflow_pattern: 'update-checker|Update Checker'
         token: ${{ secrets.GITHUB_TOKEN }}
